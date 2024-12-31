@@ -10,6 +10,28 @@ from selenium.webdriver.common.action_chains import ActionChains
 from webdriver_manager.chrome import ChromeDriverManager
 # time for delays
 import time
+# csv for databasing outputs
+import csv
+
+# CONSTANTS FOR CARD DATA   
+NAME = 0
+IMAGE = 1
+TYPE = 2
+GROUP = 3
+RACE = 4
+NATION = 5
+GRADE = 6
+POWER = 7
+CRITICAL = 8
+SHIELD = 9
+SKILL = 10
+GIFT = 11
+EFFECT = 12
+FLAVOR = 13
+REGULATION = 14
+NUMBER = 15
+RARITY = 16
+ILLSTRATOR = 17
 
 # urls
 # site uses relative urls, keep track of base url to actually visit it
@@ -28,7 +50,7 @@ driver.get(url)
 time.sleep(5)
 
 # time amount between attempts to load by scrolling
-scroll_pause_time = 2
+scroll_pause_time = 1
 last_height = driver.execute_script("return document.body.scrollHeight")
 
 while True:
@@ -68,22 +90,69 @@ for card in card_links:
 
 card_images = card_list_div.find_all('img') if card_list_div else []
 
+data_to_write = [
+    ["Name", "Image", "Type", "Group", "Race", "Nation", "Grade", "Power", "Critical", "Shield", "Skill", "Gift", "Effect", "Flavor", "Regulation", "Number", "Rarity", "Illstrator"]
+    ]
 i = 0
 for link in all_links:
     page_response = requests.get(all_links[i])
 
+    data = ['','','','','','','','','','','','','','','','','','']
     card_soup = BeautifulSoup(page_response.text, 'html.parser')
     # card_name = card_soup.find('div', class_ = 'name')
     card_image_div = card_soup.find('div', class_='main')
     if card_image_div:
         card_image_tag = card_image_div.find('img') 
-        card_image = base_url + card_image_tag['src']
-        card_name = card_image_tag['title']
+        data[NAME] = card_image_tag['title']
+        data[IMAGE] = base_url + card_image_tag['src']
+        # card_image = base_url + card_image_tag['src']
+        # card_name = card_image_tag['title']
     else:
         print("Error finding card image")
 
-    print(f"Name: {card_name}, Image: {card_image}\n")
 
+        # Extract and clean text for each attribute
+
+    data[TYPE] = card_soup.find('div', class_='type').text.strip() if card_soup.find('div', class_='type') else None
+    data[GROUP] = card_soup.find('div', class_='group').text.strip() if card_soup.find('div', class_='group') else None
+    data[RACE] = card_soup.find('div', class_='race').text.strip() if card_soup.find('div', class_='race') else None
+    data[NATION] = card_soup.find('div', class_='nation').text.strip() if card_soup.find('div', class_='nation') else None
+    data[GRADE] = card_soup.find('div', class_='grade').text.strip() if card_soup.find('div', class_='grade') else None
+    data[POWER] = card_soup.find('div', class_='power').text.strip() if card_soup.find('div', class_='power') else None
+    data[CRITICAL] = card_soup.find('div', class_='critical').text.strip() if card_soup.find('div', class_='critical') else None
+    data[SHIELD] = card_soup.find('div', class_='shield').text.strip() if card_soup.find('div', class_='shield') else None
+    data[SKILL] = card_soup.find('div', class_='skill').text.strip() if card_soup.find('div', class_='skill') else None
+    data[GIFT] = card_soup.find('div', class_='gift').text.strip() if card_soup.find('div', class_='gift') else None
+    data[EFFECT] = card_soup.find('div', class_='effect').text.strip() if card_soup.find('div', class_='effect') else None
+    data[FLAVOR] = card_soup.find('div', class_='flavor').text.strip() if card_soup.find('div', class_='flavor') else None
+
+    card_text_list_div = card_soup.findAll('div', class_= 'text-list')[1]
+
+    card_regulation_div = card_text_list_div.find('div', class_='regulation')
+    data[REGULATION] = card_regulation_div.text.strip() 
+
+    card_number_div = card_text_list_div.find('div', class_='number')
+    data[NUMBER] = card_number_div.text.strip() 
+
+    card_rarity_div = card_text_list_div.find('div', class_='rarity')
+    data[RARITY] = card_rarity_div.text.strip() 
+
+    card_illstrator_div = card_text_list_div.find('div', class_='illstrator')
+    data[ILLSTRATOR] = card_illstrator_div.text.strip() 
+
+
+    if (i == 0):
+        print(
+    f"Name: {data[NAME]}\t Image: {data[IMAGE]}\t "
+    f"Type: {data[TYPE]}\t Group: {data[GROUP]}\t "
+    f"Race: {data[RACE]}\t Nation: {data[NATION]}\t Grade: {data[GRADE]}\t "
+    f"Power: {data[POWER]}\t Critical: {data[CRITICAL]}\t Shield: {data[SHIELD]}\t "
+    f"Skill: {data[SKILL]}\t Gift: {data[GIFT]}\t Effect: {data[EFFECT]}\t "
+    f"Flavor: {data[FLAVOR]}\t Regulation: {data[REGULATION]}\t "
+    f"Number: {data[NUMBER]}\t Rarity: {data[RARITY]}\t Illstrator: {data[ILLSTRATOR]}\n")
+
+    # print(f"Name: {card_name}\t Image: {card_image}\n")
+    data_to_write.append(data)
     i += 1
 
 
@@ -91,6 +160,16 @@ for link in all_links:
 #     card_name = card['title']  # The text of the <a> tag (card name)
 #     card_pic = card['src']
 #     print(f"Name: {card_name}, IMG: {base_url + card_pic}")
-    
+
+    # write to csv file
+    # first check data
+
+# for piece in data_to_write:
+#     print(f"{piece}\n")
+
+with open("cards.csv", "w", newline="", encoding="utf-8") as file:
+    writer = csv.writer(file)
+    writer.writerows(data_to_write)
+
 
 driver.quit()
