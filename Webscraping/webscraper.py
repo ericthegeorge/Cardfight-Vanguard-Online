@@ -38,12 +38,19 @@ while True:
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(scroll_pause_time)
 
+    new_height = driver.execute_script("return document.body.scrollHeight")
+    if new_height == last_height:
+        break
+    last_height = new_height
+
+print("Selenium has completed page loading via scrolling")
+
+# use the page selenium loads to webscrape
+card_list_div = driver.find_element
 
 
-
-response = requests.get(url)
-soup = BeautifulSoup(response.text, 'html.parser')
-
+html = driver.page_source
+soup = BeautifulSoup(html, 'html.parser')
 card_list_div = soup.find('div', class_='cardlist_gallerylist')
 
 # get link to specific cards first, to open those webpages for 
@@ -54,14 +61,36 @@ all_links = []
 for card in card_links:
     all_links.append(base_url + card['href'])
     # print(f"Link: {base_url + card['href']}")
-
+#end for
 
 
 
 
 card_images = card_list_div.find_all('img') if card_list_div else []
 
-for card in card_images:
-    card_name = card['title']  # The text of the <a> tag (card name)
-    card_pic = card['src']
-    print(f"Name: {card_name}, IMG: {base_url + card_pic}")
+i = 0
+for link in all_links:
+    page_response = requests.get(all_links[i])
+
+    card_soup = BeautifulSoup(page_response.text, 'html.parser')
+    # card_name = card_soup.find('div', class_ = 'name')
+    card_image_div = card_soup.find('div', class_='main')
+    if card_image_div:
+        card_image_tag = card_image_div.find('img') 
+        card_image = base_url + card_image_tag['src']
+        card_name = card_image_tag['title']
+    else:
+        print("Error finding card image")
+
+    print(f"Name: {card_name}, Image: {card_image}\n")
+
+    i += 1
+
+
+# for card in card_images:
+#     card_name = card['title']  # The text of the <a> tag (card name)
+#     card_pic = card['src']
+#     print(f"Name: {card_name}, IMG: {base_url + card_pic}")
+    
+
+driver.quit()
