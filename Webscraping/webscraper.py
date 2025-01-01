@@ -36,7 +36,8 @@ ILLSTRATOR = 17
 # urls
 # site uses relative urls, keep track of base url to actually visit it
 base_url = "https://en.cf-vanguard.com"
-url = "https://en.cf-vanguard.com/cardlist/cardsearch/?expansion=5"
+# url = "https://en.cf-vanguard.com/cardlist/cardsearch/?expansion=5"
+url = input("Please enter official vanguard set url: ")
 
 
 # First, since the site is loaded dynamically, 
@@ -141,15 +142,15 @@ for link in all_links:
     data[ILLSTRATOR] = card_illstrator_div.text.strip() 
 
 
-    if (i == 0):
-        print(
-    f"Name: {data[NAME]}\t Image: {data[IMAGE]}\t "
-    f"Type: {data[TYPE]}\t Group: {data[GROUP]}\t "
-    f"Race: {data[RACE]}\t Nation: {data[NATION]}\t Grade: {data[GRADE]}\t "
-    f"Power: {data[POWER]}\t Critical: {data[CRITICAL]}\t Shield: {data[SHIELD]}\t "
-    f"Skill: {data[SKILL]}\t Gift: {data[GIFT]}\t Effect: {data[EFFECT]}\t "
-    f"Flavor: {data[FLAVOR]}\t Regulation: {data[REGULATION]}\t "
-    f"Number: {data[NUMBER]}\t Rarity: {data[RARITY]}\t Illstrator: {data[ILLSTRATOR]}\n")
+    # if (i == 0):
+    #     print(
+    # f"Name: {data[NAME]}\t Image: {data[IMAGE]}\t "
+    # f"Type: {data[TYPE]}\t Group: {data[GROUP]}\t "
+    # f"Race: {data[RACE]}\t Nation: {data[NATION]}\t Grade: {data[GRADE]}\t "
+    # f"Power: {data[POWER]}\t Critical: {data[CRITICAL]}\t Shield: {data[SHIELD]}\t "
+    # f"Skill: {data[SKILL]}\t Gift: {data[GIFT]}\t Effect: {data[EFFECT]}\t "
+    # f"Flavor: {data[FLAVOR]}\t Regulation: {data[REGULATION]}\t "
+    # f"Number: {data[NUMBER]}\t Rarity: {data[RARITY]}\t Illstrator: {data[ILLSTRATOR]}\n")
 
     # print(f"Name: {card_name}\t Image: {card_image}\n")
     data_to_write.append(data)
