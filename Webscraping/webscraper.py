@@ -167,7 +167,7 @@ for link in all_links:
 # for piece in data_to_write:
 #     print(f"{piece}\n")
 
-with open("cards.csv", "w", newline="", encoding="utf-8") as file:
+with open("./assets/cards.csv", "w", newline="", encoding="utf-8") as file:
     writer = csv.writer(file)
     writer.writerows(data_to_write)
 
