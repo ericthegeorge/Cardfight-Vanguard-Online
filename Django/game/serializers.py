@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import Card
+from .models import Cards
 
 class CardSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Card
+        model = Cards
         fields = '__all__'
