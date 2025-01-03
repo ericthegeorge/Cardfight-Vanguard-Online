@@ -37,9 +37,9 @@ class PackOpenerView(APIView):
                 rarity = random.uniform(0,100)
                 card_rarity = -1
                 match rarity:
-                    case x if x < 90:
+                    case x if x < 92:
                         card_rarity = 'C'
-                    case x if x < 96:
+                    case x if x < 97:
                         card_rarity = 'R'
                     case x if x < 99:
                         card_rarity = 'RR'
@@ -55,7 +55,7 @@ class PackOpenerView(APIView):
                         card_rarity = 'C'
                     case x if x < 88:
                         card_rarity = 'R'
-                    case x if x < 10:
+                    case x if x < 97:
                         card_rarity = 'RR'
                     case _:
                         card_rarity = 'RRR'
