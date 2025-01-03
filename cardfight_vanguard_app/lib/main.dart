@@ -80,9 +80,50 @@ class _PackOpenerScreenState extends State<PackOpenerScreen> {
               itemCount: cards.length,
               itemBuilder: (context, index) {
                 final card = cards[index];
-                return ListTile(
-                  title: Text(card['name']),
-                  subtitle: Text('Rarity: ${card['rarity']}'),
+                return Padding(
+                  padding: const EdgeInsets.all(
+                      16.0), // Add some spacing between cards
+                  child: Column(
+                    children: [
+                      // Card Image
+                      Container(
+                        height: MediaQuery.of(context).size.height *
+                            0.6, // 60% of screen height
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.network(
+                            card['image'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(Icons.image_not_supported,
+                                  size: 50);
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Card Title
+                      Text(
+                        card['name'],
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      // Card Subtitle
+                      Text(
+                        'Rarity: ${card['rarity']}',
+                        style: const TextStyle(fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -91,4 +132,51 @@ class _PackOpenerScreenState extends State<PackOpenerScreen> {
       ),
     );
   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text('Pack Opener')),
+//       body: Column(
+//         children: [
+//           ElevatedButton(
+//             onPressed: fetchPack,
+//             child: const Text('Open Pack'),
+//           ),
+//           Expanded(
+//             child: ListView.builder(
+//               itemCount: cards.length,
+//               itemBuilder: (context, index) {
+//                 final card = cards[index];
+//                 return Card(
+//                   child: ListTile(
+//                     leading: Container(
+//                       width: 300,
+//                       height: 438,
+//                       decoration: BoxDecoration(
+//                         borderRadius: BorderRadius.circular(8),
+//                         border: Border.all(color: Colors.grey),
+//                       ),
+//                       child: ClipRRect(
+//                         borderRadius: BorderRadius.circular(8),
+//                         child: Image.network(
+//                           card['image'],
+//                           fit: BoxFit.cover,
+//                           errorBuilder: (context, error, stackTrace) {
+//                             return const Icon(Icons.image_not_supported);
+//                           },
+//                         ),
+//                       ),
+//                     ),
+//                     title: Text(card['name']),
+//                     subtitle: Text('Rarity: ${card['rarity']}'),
+//                   ),
+//                 );
+//               },
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 }
