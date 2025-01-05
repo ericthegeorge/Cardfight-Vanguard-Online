@@ -30,7 +30,79 @@ class MyApp extends StatelessWidget {
           // This works for code too, not just values: Most code changes can be
           // tested with just a hot reload.
           primarySwatch: Colors.blue),
-      home: const PackOpenerScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => LoginScreen(),
+        '/open-pack': (context) => PackOpenerScreen(),
+      },
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  String? _errorMessage;
+
+  void _login() {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+    if (username.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter a username';
+      });
+      return;
+    }
+    //else
+    setState(() {
+      _errorMessage = null;
+    });
+    Navigator.pushNamed(
+      context,
+      '/open-pack',
+      arguments: username,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Login'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _usernameController,
+              decoration: InputDecoration(
+                labelText: 'Username',
+                errorText: _errorMessage,
+              ),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                errorText: _errorMessage,
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _login,
+              child: Text('Login'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -57,12 +129,22 @@ class PackOpenerScreen extends StatefulWidget {
 class _PackOpenerScreenState extends State<PackOpenerScreen> {
   final ApiService apiService = ApiService();
   List<dynamic> cards = [];
+  late String username;
+
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    username = ModalRoute.of(context)?.settings.arguments as String? ?? 'Guest';
+  }
 
   Future<void> fetchPack() async {
-    final pack = await apiService.openPack();
-    setState(() {
-      cards = pack;
-    });
+    try {
+      final pack = await apiService.openPack(username);
+      setState(() {
+        cards = pack;
+      });
+    } catch (e) {
+      print('Error fetching pack: $e');
+    }
   }
 
   @override
@@ -91,10 +173,10 @@ class _PackOpenerScreenState extends State<PackOpenerScreen> {
                             0.6, // 60% of screen height
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey),
+                          border: Border.all(color: Colors.transparent),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                           child: Image.network(
                             card['image'],
                             fit: BoxFit.cover,
@@ -132,51 +214,4 @@ class _PackOpenerScreenState extends State<PackOpenerScreen> {
       ),
     );
   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Pack Opener')),
-//       body: Column(
-//         children: [
-//           ElevatedButton(
-//             onPressed: fetchPack,
-//             child: const Text('Open Pack'),
-//           ),
-//           Expanded(
-//             child: ListView.builder(
-//               itemCount: cards.length,
-//               itemBuilder: (context, index) {
-//                 final card = cards[index];
-//                 return Card(
-//                   child: ListTile(
-//                     leading: Container(
-//                       width: 300,
-//                       height: 438,
-//                       decoration: BoxDecoration(
-//                         borderRadius: BorderRadius.circular(8),
-//                         border: Border.all(color: Colors.grey),
-//                       ),
-//                       child: ClipRRect(
-//                         borderRadius: BorderRadius.circular(8),
-//                         child: Image.network(
-//                           card['image'],
-//                           fit: BoxFit.cover,
-//                           errorBuilder: (context, error, stackTrace) {
-//                             return const Icon(Icons.image_not_supported);
-//                           },
-//                         ),
-//                       ),
-//                     ),
-//                     title: Text(card['name']),
-//                     subtitle: Text('Rarity: ${card['rarity']}'),
-//                   ),
-//                 );
-//               },
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
 }

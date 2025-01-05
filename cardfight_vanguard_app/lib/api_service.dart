@@ -4,8 +4,9 @@ import 'package:http/http.dart' as http;
 class ApiService {
   final String baseUrl = "http://127.0.0.1:8000/api";
 
-  Future<List<dynamic>> openPack() async {
-    final response = await http.get(Uri.parse('$baseUrl/open-pack/'));
+  Future<List<dynamic>> openPack(String username) async {
+    final url = Uri.parse('$baseUrl/user/$username/open-pack');
+    final response = await http.get(url);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {

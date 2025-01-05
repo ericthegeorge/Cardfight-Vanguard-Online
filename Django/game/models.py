@@ -154,4 +154,6 @@ class UserProfile(models.Model):
     cards = models.ManyToManyField(Cards, related_name='owners')
     # profile_picture to add
     # bio to add
+    def __str__(self):
+        return self.user.username
     

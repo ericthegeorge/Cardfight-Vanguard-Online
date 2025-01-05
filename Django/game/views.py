@@ -1,12 +1,32 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Cards
-from game.serializers import CardSerializer
+
+from .models import Cards, UserProfile
+from game.serializers import CardSerializer, UserProfileSerializer
+from django.contrib.auth.models import User
+from game.models import UserProfile
+
 from random import sample
 import random
 SUPER_PACK_CHANCE = 0.5 # out of 100 in uniform random distribution
 # Create your views here.
+
+# DEBUG
+# user = User.objects.create_user(username="testuser", password="1234")
+# cards = Cards.objects.filter(rarity= "RRR", number__startswith="BT01")
+# card1 = cards[0]
+# card2 = cards[1]
+
+# user_profile = UserProfile.objects.create(user=user)
+# user_profile.cards.add(card1, card2)
+
+
+# CHECK VALS
+# test_user_cards = user_profile.cards.all()
+# print(test_user_cards)
+
+# END
 
 class PackOpenerView(APIView):
     @staticmethod
@@ -85,7 +105,7 @@ class PackOpenerView(APIView):
             selected_cards.append(card)
         return selected_cards
     
-    def get(self, request):
+    def get(self, request, username):
         
         super_pack_rarity = random.uniform(0, 100)
         pack_rarities = PackOpenerView.choose_pack_rarities()
@@ -93,6 +113,8 @@ class PackOpenerView(APIView):
         # get cards at end based on rarities
         cards = PackOpenerView.get_random_cards(pack_rarities)
         serializer = CardSerializer(cards, many=True)
+        user_profile = UserProfile.objects.get(user__username = username)
+        user_profile.cards.add(*cards)
         return Response(serializer.data)
 
 
@@ -108,3 +130,15 @@ class AllCardsView(APIView):
             })
             
         return Response(card_data)
+    
+class UserProfileView(APIView):
+    def get(self, request, username):
+        user_profile = UserProfile.objects.get(user__username = username)
+        serializer = UserProfileSerializer(user_profile)
+        return Response(serializer.data)
+    
+class UserCardsView(APIView):
+    def get(self, request, username):
+        user_profile = UserProfile.objects.get(user__username = username)
+        serializer = UserProfileSerializer(user_profile)
+        return Response({"cards": serializer.data['cards']})
