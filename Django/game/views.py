@@ -5,7 +5,7 @@ from rest_framework import status
 
 from django.contrib.auth import authenticate
 
-from .models import Cards, UserProfile
+from .models import Cards, UserProfile, UserCard
 from game.serializers import CardSerializer, UserProfileSerializer
 from django.contrib.auth.models import User
 from game.models import UserProfile
@@ -110,29 +110,34 @@ class PackOpenerView(APIView):
     
     def get(self, request, username):
         
-        super_pack_rarity = random.uniform(0, 100)
+        # super_pack_rarity = random.uniform(0, 100)
         pack_rarities = PackOpenerView.choose_pack_rarities()
             # regular pack logic
         # get cards at end based on rarities
         cards = PackOpenerView.get_random_cards(pack_rarities)
+        try:
+            user_profile = UserProfile.objects.get(user__username = username)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found"}, status = status.HTTP_404_NOT_FOUND)
+            # this 404 wild lmao
+        for card in cards:
+            user_card, created = UserCard.objects.get_or_create(
+                user_profile = user_profile,
+                card = card
+            )
+            if not created:
+                user_card.count +=1
+            user_card.save()
+        
         serializer = CardSerializer(cards, many=True)
-        user_profile = UserProfile.objects.get(user__username = username)
-        user_profile.cards.add(*cards)
         return Response(serializer.data)
 
 
 class AllCardsView(APIView):
     def get(self, request):
         cards = Cards.objects.all()
-        
-        card_data = []
-        for card in cards:
-            card_data.append({
-                'name': card.name,
-                'rarity': card.rarity,
-            })
-            
-        return Response(card_data)
+        serializer = CardSerializer(cards, many=True)
+        return Response(serializer.data)
     
 class UserProfileView(APIView):
     def get(self, request, username):

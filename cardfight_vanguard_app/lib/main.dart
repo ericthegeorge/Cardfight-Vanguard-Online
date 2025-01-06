@@ -156,6 +156,9 @@ class _LoginScreenState extends State<LoginScreen> {
           setState(() {
             _errorMessage = null;
           });
+          // Future.delayed(const Duration(seconds: 2), () {
+          //   Navigator.pushReplacementNamed(context, '/login');
+          // });
         } else {
           setState(() {
             _errorMessage = data['error'];

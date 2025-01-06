@@ -151,9 +151,16 @@ class DjangoSession(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    cards = models.ManyToManyField(Cards, related_name='owners')
+    cards = models.ManyToManyField(Cards, related_name='owners', through='UserCard')
     # profile_picture to add
     # bio to add
     def __str__(self):
         return self.user.username
     
+class UserCard(models.Model):
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    card = models.ForeignKey(Cards, on_delete=models.CASCADE)
+    count = models.PositiveIntegerField(default=1)
+    
+    def __str__(self):
+        return f"{self.user_profile.user.username} owns {self.count} {self.card.name}(s)"
