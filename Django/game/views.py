@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
+
+from django.contrib.auth import authenticate
 
 from .models import Cards, UserProfile
 from game.serializers import CardSerializer, UserProfileSerializer
@@ -84,9 +87,9 @@ class PackOpenerView(APIView):
             rarity = random.uniform(0, 100)
             card_rarity = -1
             match rarity:
-                case x if x < 40 :
+                case x if x < 35 :
                     card_rarity = 'R'
-                case x if x < 85:
+                case x if x < 80:
                     card_rarity = 'RR'
                 case _:
                     card_rarity = 'RRR'
@@ -142,3 +145,24 @@ class UserCardsView(APIView):
         user_profile = UserProfile.objects.get(user__username = username)
         serializer = UserProfileSerializer(user_profile)
         return Response({"cards": serializer.data['cards']})
+    
+class LoginView(APIView):
+    def post(self, request, username):
+        password = request.data.get('password', None)
+        
+        if not password:
+            return Response({"error": "Password is required"}, states = status.HTTP_400_BAD_REQUEST)
+        
+        user = authenticate(username = username, password = password)
+        
+        if user is not None:  # exists
+            return Response({
+                "success" : True,
+                "message": "Login successful",
+                "username": username
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "success": False,
+                "message": "Invalid login credentials"
+            }, status=status.HTTP_401_UNAUTHORIZED)

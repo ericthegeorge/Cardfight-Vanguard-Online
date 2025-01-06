@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'api_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
@@ -44,29 +46,88 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
+class PasswordField extends StatefulWidget {
+  final TextEditingController controller;
+
+  PasswordField({required this.controller});
+
+  @override
+  _PasswordFieldState createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<PasswordField> {
+  bool _isVisible = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+        controller: widget.controller,
+        obscureText: !_isVisible,
+        enableSuggestions: false,
+        autocorrect: false,
+        decoration: InputDecoration(
+            labelText: 'Password',
+            border: OutlineInputBorder(),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isVisible ? Icons.visibility : Icons.visibility_off,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isVisible = !_isVisible;
+                });
+              },
+            )));
+  }
+}
+
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _errorMessage;
 
-  void _login() {
+  final ApiService _apiService = ApiService();
+
+  Future<void> _login() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
-    if (username.isEmpty) {
+    if (username.isEmpty || password.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter a username';
+        _errorMessage = 'Please enter a username and password';
       });
       return;
     }
-    //else
-    setState(() {
-      _errorMessage = null;
-    });
-    Navigator.pushNamed(
-      context,
-      '/open-pack',
-      arguments: username,
-    );
+
+    // final url = Uri.parse('/user/$username/login/');
+    try {
+      final response = await _apiService.login(username, password);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          Navigator.pushNamed(
+            context,
+            '/open-pack',
+            arguments: username,
+          );
+          setState(() {
+            _errorMessage = null;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Invalid username or password';
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Login failed';
+          // : ${response.statusCode}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occured: $e';
+      });
+    }
   }
 
   @override
@@ -86,16 +147,13 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: InputDecoration(
                 labelText: 'Username',
                 errorText: _errorMessage,
+                border: OutlineInputBorder(),
               ),
+              autocorrect: false,
             ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                errorText: _errorMessage,
-              ),
-            ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
+            PasswordField(controller: _passwordController),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
               child: Text('Login'),

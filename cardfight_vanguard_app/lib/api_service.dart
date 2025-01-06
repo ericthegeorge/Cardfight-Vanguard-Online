@@ -13,4 +13,13 @@ class ApiService {
       throw Exception("Failed to load pack");
     }
   }
+
+  Future<http.Response> login(String username, String password) async {
+    final url = Uri.parse('$baseUrl/user/$username/login/');
+    final response = await http.post(
+      url,
+      body: {'password': password},
+    );
+    return response;
+  }
 }
