@@ -166,3 +166,23 @@ class LoginView(APIView):
                 "success": False,
                 "message": "Invalid login credentials"
             }, status=status.HTTP_401_UNAUTHORIZED)
+            
+class RegisterView(APIView):
+    def post(self, request, username):
+        password = request.data.get('password', None)
+        if not password or not username:
+            return Response({"error": "Username and password is required"}, states = status.HTTP_400_BAD_REQUEST)
+        
+        if User.objects.filter(username = username).exists():
+            return Response({"error": "Username is taken"}, status = status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.create_user(username = username, password = password)
+            user_profile = UserProfile.objects.create(user = user)
+            return Response(
+                {"message": "User successfully registered"}, status = status.HTTP_201_CREATED
+            )
+        except Exception:
+            return Response(
+                {"error": "server error"}, status = status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
