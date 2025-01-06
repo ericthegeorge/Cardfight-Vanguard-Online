@@ -85,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _errorMessage;
+  String? _successMessage;
 
   final ApiService _apiService = ApiService();
 
@@ -130,6 +131,49 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _register() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+    if (username.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter a username and password';
+      });
+      return;
+    }
+
+    // final url = Uri.parse('/user/$username/login/');
+    try {
+      final response = await _apiService.register(username, password);
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          // Navigator.pushNamed(
+          // context,
+          // '/open-pack',
+          // arguments: username,
+          // );
+          _successMessage = "Successfully registered!";
+          setState(() {
+            _errorMessage = null;
+          });
+        } else {
+          setState(() {
+            _errorMessage = data['error'];
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Register failed';
+          // : ${response.statusCode}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occured: $e';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -146,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _usernameController,
               decoration: InputDecoration(
                 labelText: 'Username',
-                errorText: _errorMessage,
+                // errorText: _errorMessage,
                 border: OutlineInputBorder(),
               ),
               autocorrect: false,
@@ -154,9 +198,25 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 20),
             PasswordField(controller: _passwordController),
             const SizedBox(height: 20),
+            if (_errorMessage != null)
+              Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            if (_successMessage != null)
+              Text(
+                _successMessage!,
+                style: const TextStyle(color: Colors.green),
+              ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
               child: Text('Login'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _register,
+              child: Text('Register'),
             ),
           ],
         ),

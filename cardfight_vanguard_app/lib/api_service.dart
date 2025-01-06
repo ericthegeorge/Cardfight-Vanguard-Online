@@ -22,4 +22,13 @@ class ApiService {
     );
     return response;
   }
+
+  Future<http.Response> register(String username, String password) async {
+    final url = Uri.parse('$baseUrl/user/$username/register/');
+    final response = await http.post(
+      url,
+      body: {'password': password},
+    );
+    return response;
+  }
 }

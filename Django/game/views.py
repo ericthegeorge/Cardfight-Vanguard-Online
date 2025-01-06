@@ -76,9 +76,9 @@ class PackOpenerView(APIView):
                 match rarity:
                     case x if x < 70:
                         card_rarity = 'C'
-                    case x if x < 88:
+                    case x if x < 85:
                         card_rarity = 'R'
-                    case x if x < 97:
+                    case x if x < 95:
                         card_rarity = 'RR'
                     case _:
                         card_rarity = 'RRR'
@@ -87,9 +87,9 @@ class PackOpenerView(APIView):
             rarity = random.uniform(0, 100)
             card_rarity = -1
             match rarity:
-                case x if x < 35 :
+                case x if x < 50 :
                     card_rarity = 'R'
-                case x if x < 80:
+                case x if x < 87.5:
                     card_rarity = 'RR'
                 case _:
                     card_rarity = 'RRR'
@@ -171,18 +171,18 @@ class RegisterView(APIView):
     def post(self, request, username):
         password = request.data.get('password', None)
         if not password or not username:
-            return Response({"error": "Username and password is required"}, states = status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Username and password is required", "success": False}, states = status.HTTP_400_BAD_REQUEST)
         
         if User.objects.filter(username = username).exists():
-            return Response({"error": "Username is taken"}, status = status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Username is taken", "success": False}, status = status.HTTP_400_BAD_REQUEST)
         
         try:
             user = User.objects.create_user(username = username, password = password)
             user_profile = UserProfile.objects.create(user = user)
             return Response(
-                {"message": "User successfully registered"}, status = status.HTTP_201_CREATED
+                {"message": "User successfully registered", "success": True}, status = status.HTTP_201_CREATED
             )
         except Exception:
             return Response(
-                {"error": "server error"}, status = status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "server error", "success": False}, status = status.HTTP_500_INTERNAL_SERVER_ERROR
             )
