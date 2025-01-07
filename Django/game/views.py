@@ -191,3 +191,23 @@ class RegisterView(APIView):
             return Response(
                 {"error": "server error", "success": False}, status = status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
+class UserCardsView(APIView):
+    def get(self, request, username):
+        if not username:
+            return Response({"error": "No User"}, status=status.HTTP_404_NOT_FOUND) 
+        try:
+            user_profile = UserProfile.objects.get(user__username = username)    
+        except UserProfile.DoesNotExist:
+            return Response({"error": "No User"}, status=status.HTTP_404_NOT_FOUND) 
+        user_cards = UserCard.objects.filter(user_profile=user_profile)
+        cards = []
+        for user_card in user_cards:
+            cards.append({
+                "card_name":user_card.card.name,
+                "image": user_card.card.image,
+                "rarity": user_card.card.rarity,
+                "count": user_card.count,
+            })
+            
+        return Response(cards, status=status.HTTP_200_OK)

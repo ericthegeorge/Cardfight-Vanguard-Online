@@ -36,6 +36,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => LoginScreen(),
         '/open-pack': (context) => PackOpenerScreen(),
+        '/home': (context) => HomeScreen(),
+        '/user-cards': (context) => CollectionScreen(),
       },
     );
   }
@@ -107,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (data['success'] == true) {
           Navigator.pushNamed(
             context,
-            '/open-pack',
+            '/home',
             arguments: username,
           );
           setState(() {
@@ -228,19 +230,205 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late String username;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String) {
+      username = args;
+    } else {
+      username = 'Guest'; // Fallback if no username is passed
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Welcome, $username!'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/open-pack', arguments: username);
+              },
+              child: const Text('Open Packs'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // print("Username passed to /user-cards: $username"); //DEBUG
+                Navigator.pushNamed(context, '/user-cards',
+                    arguments: username);
+              },
+              child: const Text('Collection'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CollectionScreen extends StatefulWidget {
+  const CollectionScreen({Key? key}) : super(key: key);
+
+  @override
+  _CollectionScreenState createState() => _CollectionScreenState();
+}
+
+class _CollectionScreenState extends State<CollectionScreen> {
+  final ApiService apiService = ApiService();
+  late Future<List<UserCard>> cards;
+  late String username;
+
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String) {
+      username = args;
+      print("Arguments received: $username");
+    } else {
+      username = 'Guest'; //never
+    }
+    cards = fetchUserCards();
+  }
+
+  Future<List<UserCard>> fetchUserCards() async {
+    try {
+      final data = await apiService.user_cards(username);
+      return data.map((json) => UserCard.fromJson(json)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Collection of $username'),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          setState(() {
+            cards = fetchUserCards();
+          });
+        },
+        child: FutureBuilder<List<UserCard>>(
+          future: cards,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(
+                  child: Text('No cards found in your collection.'));
+            } else {
+              final cards = snapshot.data!;
+              return GridView.builder(
+                padding: const EdgeInsets.all(4.0),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 8.0,
+                  crossAxisSpacing: 8.0,
+                  childAspectRatio: 2 / 3, // Aspect ratio for card size
+                ),
+                itemCount: cards.length,
+                itemBuilder: (context, index) {
+                  final card = cards[index];
+                  return Card(
+                    margin: const EdgeInsets.all(8.0),
+                    elevation: 4.0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Stack(
+                      // alignment: Alignment
+                      //     .bottomCenter, // Aligns content to the bottom
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8.0),
+                          child: Image.network(
+                            card.image,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        // Superimposed text at the bottom
+                        Positioned(
+                          bottom:
+                              0.0, // Adjust the distance from the bottom edge
+                          left: 0.0, // Optional: adjust horizontal positioning
+                          right: 0.0, // Optional: adjust horizontal positioning
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              padding: EdgeInsets.all(0.0),
+                              color: Colors.black.withAlpha(0),
+                              child: Text(
+                                'x${card.count}', // Display the count
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.normal,
+                                  fontFamily: 'Verdana',
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class UserCard {
+  final String name;
+  final String image;
+  final String rarity;
+  final int count;
+
+  UserCard(
+      {required this.name,
+      required this.image,
+      required this.rarity,
+      required this.count});
+
+  factory UserCard.fromJson(Map<String, dynamic> json) {
+    return UserCard(
+      name: json['card_name'],
+      image: json['image'],
+      rarity: json['rarity'],
+      count: json['count'],
+    );
+  }
+}
+
 class PackOpenerScreen extends StatefulWidget {
   const PackOpenerScreen({Key? key}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  // final String title;
 
   @override
   _PackOpenerScreenState createState() => _PackOpenerScreenState();

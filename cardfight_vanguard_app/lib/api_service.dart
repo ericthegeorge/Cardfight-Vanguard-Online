@@ -31,4 +31,14 @@ class ApiService {
     );
     return response;
   }
+
+  Future<List<dynamic>> user_cards(String username) async {
+    final url = Uri.parse('$baseUrl/user/$username/user-cards');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("Failed to load pack");
+    }
+  }
 }

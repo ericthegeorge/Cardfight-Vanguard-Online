@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import PackOpenerView
-from .views import AllCardsView, UserProfileView, LoginView, RegisterView
+from .views import AllCardsView, UserProfileView, LoginView, RegisterView, UserCardsView
 
 
 urlpatterns = [
@@ -10,4 +10,5 @@ urlpatterns = [
     path('user/<str:username>/open-pack/', PackOpenerView.as_view(), name='open_pack'),
     path('user/<str:username>/login/', LoginView.as_view(), name='user_login'),
     path('user/<str:username>/register/', RegisterView.as_view(), name = 'user_register'),
+    path('user/<str:username>/user-cards/', UserCardsView.as_view(), name = 'user_cards'),
 ]
