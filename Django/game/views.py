@@ -5,7 +5,7 @@ from rest_framework import status
 
 from django.contrib.auth import authenticate
 
-from .models import Cards, UserProfile, UserCard
+from .models import Card, UserProfile, UserCard
 from game.serializers import CardSerializer, UserProfileSerializer
 from django.contrib.auth.models import User
 from game.models import UserProfile
@@ -100,7 +100,7 @@ class PackOpenerView(APIView):
         selected_cards = []
         
         for rarity in rarities:
-            all_cards = Cards.objects.filter(rarity= rarity, number__startswith="BT01")
+            all_cards = Card.objects.filter(rarity= rarity, number__startswith="BT01")
             total_cards = all_cards.count()
             
             rindx = random.randint(0, total_cards - 1)
@@ -135,7 +135,7 @@ class PackOpenerView(APIView):
 
 class AllCardsView(APIView):
     def get(self, request):
-        cards = Cards.objects.all()
+        cards = Card.objects.all()
         serializer = CardSerializer(cards, many=True)
         return Response(serializer.data)
     

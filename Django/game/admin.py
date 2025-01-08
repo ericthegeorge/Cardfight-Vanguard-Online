@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cards, UserProfile
+from .models import Card, UserProfile, UserDeck, DeckCard
 # Register your models here.
 
 # admin.site.register(Cards)
@@ -18,4 +18,6 @@ class UserProfileAdmin(admin.ModelAdmin):
     inlines = [CardInline]
 
 admin.site.register(UserProfile, UserProfileAdmin)
-admin.site.register(Cards, CardAdmin)
+admin.site.register(Card, CardAdmin)
+admin.site.register(UserDeck)
+admin.site.register(DeckCard)

@@ -77,7 +77,7 @@ class AuthUserUserPermissions(models.Model):
         unique_together = (('user', 'permission'),)
 
 
-class Cards(models.Model):
+class Card(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)
     image = models.CharField(max_length=255, blank=True, null=True)
@@ -151,7 +151,7 @@ class DjangoSession(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    cards = models.ManyToManyField(Cards, related_name='owners', through='UserCard')
+    cards = models.ManyToManyField(Card, related_name='owners', through='UserCard')
     # profile_picture to add
     # bio to add
     def __str__(self):
@@ -159,8 +159,23 @@ class UserProfile(models.Model):
     
 class UserCard(models.Model):
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    card = models.ForeignKey(Cards, on_delete=models.CASCADE)
+    card = models.ForeignKey(Card, on_delete=models.CASCADE)
     count = models.PositiveIntegerField(default=1)
     
     def __str__(self):
         return f"{self.user_profile.user.username} owns {self.count} {self.card.name}(s)"
+    
+class UserDeck(models.Model):
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="decks")
+    name = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f"{self.name} from user {self.user_profile.user.username}"
+    
+class DeckCard(models.Model):
+    deck = models.ForeignKey(UserDeck, on_delete=models.CASCADE, related_name="deck_cards")
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="deck_cards")
+    count = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.count}x {self.card.name} in {self.deck.name}"
