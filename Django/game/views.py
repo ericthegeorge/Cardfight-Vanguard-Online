@@ -211,3 +211,4 @@ class UserCardsView(APIView):
             })
             
         return Response(cards, status=status.HTTP_200_OK)
+    
