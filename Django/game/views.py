@@ -214,22 +214,42 @@ class UserCardsView(APIView):
     
 class UserDecksListAndCreateView(APIView):
     
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     
-    def get(self, request):
-        user_decks = UserDeck.objects.filter(user_profile=request.user.userprofile)
-        serializer = UserDeckSerializer(user_decks, many=True)
-        return Response(serializer.data, status = status.HTTP_200_OK)
+    def get(self, request, username):
+        try:
+            # Filter decks by the given username
+            user_profile = UserProfile.objects.get(user__username=username)
+            user_decks = UserDeck.objects.filter(user_profile=user_profile)
+            serializer = UserDeckSerializer(user_decks, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Internal server error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     
-    def post(self, request):
-        serializer = UserDeckSerializer(data = request.data, context={'request':request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+    def post(self, request, username):
+        try:
+            # Validate and fetch the user profile for the given username
+            user_profile = UserProfile.objects.get(user__username=username)
+            
+            # Add user_profile to request data
+            data = request.data.copy()
+            data['user_profile'] = user_profile.id
+            
+            serializer = UserDeckSerializer(data=data, context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Internal server error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 class UserDeckDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self, pk, user_profile):
         try:

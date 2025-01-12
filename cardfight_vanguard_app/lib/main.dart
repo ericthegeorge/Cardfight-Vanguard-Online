@@ -438,7 +438,7 @@ class UserCard {
 
 // class UserDeck {
 //   final String name;
-//   // final String 
+//   // final String
 // }
 
 class DeckListCreateScreen extends StatefulWidget {
@@ -450,7 +450,7 @@ class DeckListCreateScreen extends StatefulWidget {
 
 class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
   final ApiService _apiService = ApiService();
-  late Future<List<UserCard>> cards;
+  late Future<List<dynamic>> decks;
   late String username;
 
   @override
@@ -459,18 +459,81 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is String) {
       username = args;
-    }else {
+    } else {
       username = 'Guest'; //never
     }
     //anything else to be done on change
+    setState(() {
+      decks = _apiService.fetchUserDecks(username);
+    });
   }
 
-  Future<List<UserCard>> fetchUserDecks() async {
-    try {
-      // final data = await _apiService
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Decks of $username'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Create Deck',
+            onPressed:
+                null, // TODO navigateToCreateDeck, // Navigate to CreateDeckPage
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          setState(() {
+            decks = _apiService
+                .fetchUserDecks(username); // Reload decks on pull-to-refresh
+          });
+        },
+        child: FutureBuilder<List<dynamic>>(
+          future: decks,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No decks found. Create one!'));
+            } else {
+              final decks = snapshot.data!;
+              return ListView.builder(
+                itemCount: decks.length,
+                itemBuilder: (context, index) {
+                  final deck = decks[index];
+                  return Card(
+                    margin: const EdgeInsets.all(8.0),
+                    elevation: 4.0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListTile(
+                      title: Text(deck['name']), // Deck name from API
+                      subtitle: Text('${deck['cards']} cards'),
+                      trailing: const Icon(Icons.arrow_forward),
+                      onTap: () {
+                        // Navigate to deck details screen or similar
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) =>
+                        //         DeckDetailPage(username: widget.username, deckId: deck['id']),
+                        //   ),
+                        // );
+                      },
+                    ),
+                  );
+                },
+              );
+            }
+          },
+        ),
+      ),
+    );
   }
-
 }
 
 class PackOpenerScreen extends StatefulWidget {
