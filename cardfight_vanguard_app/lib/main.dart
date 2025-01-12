@@ -38,6 +38,8 @@ class MyApp extends StatelessWidget {
         '/open-pack': (context) => PackOpenerScreen(),
         '/home': (context) => HomeScreen(),
         '/user-cards': (context) => CollectionScreen(),
+        '/decks': (context) => DeckListCreateScreen(),
+        // '/decks/'
       },
     );
   }
@@ -289,16 +291,17 @@ class CollectionScreen extends StatefulWidget {
 }
 
 class _CollectionScreenState extends State<CollectionScreen> {
-  final ApiService apiService = ApiService();
+  final ApiService _apiService = ApiService();
   late Future<List<UserCard>> cards;
   late String username;
 
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is String) {
       username = args;
-      print("Arguments received: $username");
+      // print("Arguments received: $username");
     } else {
       username = 'Guest'; //never
     }
@@ -307,7 +310,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   Future<List<UserCard>> fetchUserCards() async {
     try {
-      final data = await apiService.user_cards(username);
+      final data = await _apiService.userCards(username);
       return data.map((json) => UserCard.fromJson(json)).toList();
     } catch (e) {
       rethrow;
@@ -317,9 +320,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Collection of $username'),
-      ),
+      appBar: AppBar(title: Text('Collection of $username'), actions: [
+        IconButton(
+          icon: Icon(Icons.style),
+          tooltip: 'Decks',
+          onPressed: () {
+            Navigator.pushNamed(context, '/decks', arguments: username);
+          },
+        )
+      ]),
       body: RefreshIndicator(
         onRefresh: () async {
           setState(() {
@@ -427,6 +436,106 @@ class UserCard {
   }
 }
 
+// class UserDeck {
+//   final String name;
+//   // final String
+// }
+
+class DeckListCreateScreen extends StatefulWidget {
+  const DeckListCreateScreen({Key? key}) : super(key: key);
+
+  @override
+  _DeckListCreateScreenState createState() => _DeckListCreateScreenState();
+}
+
+class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
+  final ApiService _apiService = ApiService();
+  late Future<List<dynamic>> decks;
+  late String username;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String) {
+      username = args;
+    } else {
+      username = 'Guest'; //never
+    }
+    //anything else to be done on change
+    setState(() {
+      decks = _apiService.fetchUserDecks(username);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Decks of $username'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Create Deck',
+            onPressed:
+                null, // TODO navigateToCreateDeck, // Navigate to CreateDeckPage
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          setState(() {
+            decks = _apiService
+                .fetchUserDecks(username); // Reload decks on pull-to-refresh
+          });
+        },
+        child: FutureBuilder<List<dynamic>>(
+          future: decks,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No decks found. Create one!'));
+            } else {
+              final decks = snapshot.data!;
+              return ListView.builder(
+                itemCount: decks.length,
+                itemBuilder: (context, index) {
+                  final deck = decks[index];
+                  return Card(
+                    margin: const EdgeInsets.all(8.0),
+                    elevation: 4.0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListTile(
+                      title: Text(deck['name']), // Deck name from API
+                      subtitle: Text('${deck['cards']} cards'),
+                      trailing: const Icon(Icons.arrow_forward),
+                      onTap: () {
+                        // Navigate to deck details screen or similar
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) =>
+                        //         DeckDetailPage(username: widget.username, deckId: deck['id']),
+                        //   ),
+                        // );
+                      },
+                    ),
+                  );
+                },
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class PackOpenerScreen extends StatefulWidget {
   const PackOpenerScreen({Key? key}) : super(key: key);
 
@@ -436,10 +545,11 @@ class PackOpenerScreen extends StatefulWidget {
 }
 
 class _PackOpenerScreenState extends State<PackOpenerScreen> {
-  final ApiService apiService = ApiService();
+  final ApiService _apiService = ApiService();
   List<dynamic> cards = [];
   late String username;
 
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     username = ModalRoute.of(context)?.settings.arguments as String? ?? 'Guest';
@@ -447,7 +557,7 @@ class _PackOpenerScreenState extends State<PackOpenerScreen> {
 
   Future<void> fetchPack() async {
     try {
-      final pack = await apiService.openPack(username);
+      final pack = await _apiService.openPack(username);
       setState(() {
         cards = pack;
       });
