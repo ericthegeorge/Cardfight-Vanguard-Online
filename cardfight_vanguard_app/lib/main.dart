@@ -38,6 +38,8 @@ class MyApp extends StatelessWidget {
         '/open-pack': (context) => PackOpenerScreen(),
         '/home': (context) => HomeScreen(),
         '/user-cards': (context) => CollectionScreen(),
+        '/decks': (context) => DeckListCreateScreen(),
+        // '/decks/'
       },
     );
   }
@@ -289,16 +291,17 @@ class CollectionScreen extends StatefulWidget {
 }
 
 class _CollectionScreenState extends State<CollectionScreen> {
-  final ApiService apiService = ApiService();
+  final ApiService _apiService = ApiService();
   late Future<List<UserCard>> cards;
   late String username;
 
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is String) {
       username = args;
-      print("Arguments received: $username");
+      // print("Arguments received: $username");
     } else {
       username = 'Guest'; //never
     }
@@ -307,7 +310,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   Future<List<UserCard>> fetchUserCards() async {
     try {
-      final data = await apiService.user_cards(username);
+      final data = await _apiService.userCards(username);
       return data.map((json) => UserCard.fromJson(json)).toList();
     } catch (e) {
       rethrow;
@@ -317,9 +320,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Collection of $username'),
-      ),
+      appBar: AppBar(title: Text('Collection of $username'), actions: [
+        IconButton(
+          icon: Icon(Icons.style),
+          tooltip: 'Decks',
+          onPressed: () {
+            Navigator.pushNamed(context, '/decks', arguments: username);
+          },
+        )
+      ]),
       body: RefreshIndicator(
         onRefresh: () async {
           setState(() {
@@ -427,6 +436,43 @@ class UserCard {
   }
 }
 
+// class UserDeck {
+//   final String name;
+//   // final String 
+// }
+
+class DeckListCreateScreen extends StatefulWidget {
+  const DeckListCreateScreen({Key? key}) : super(key: key);
+
+  @override
+  _DeckListCreateScreenState createState() => _DeckListCreateScreenState();
+}
+
+class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
+  final ApiService _apiService = ApiService();
+  late Future<List<UserCard>> cards;
+  late String username;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String) {
+      username = args;
+    }else {
+      username = 'Guest'; //never
+    }
+    //anything else to be done on change
+  }
+
+  Future<List<UserCard>> fetchUserDecks() async {
+    try {
+      // final data = await _apiService
+    }
+  }
+
+}
+
 class PackOpenerScreen extends StatefulWidget {
   const PackOpenerScreen({Key? key}) : super(key: key);
 
@@ -436,10 +482,11 @@ class PackOpenerScreen extends StatefulWidget {
 }
 
 class _PackOpenerScreenState extends State<PackOpenerScreen> {
-  final ApiService apiService = ApiService();
+  final ApiService _apiService = ApiService();
   List<dynamic> cards = [];
   late String username;
 
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     username = ModalRoute.of(context)?.settings.arguments as String? ?? 'Guest';
@@ -447,7 +494,7 @@ class _PackOpenerScreenState extends State<PackOpenerScreen> {
 
   Future<void> fetchPack() async {
     try {
-      final pack = await apiService.openPack(username);
+      final pack = await _apiService.openPack(username);
       setState(() {
         cards = pack;
       });

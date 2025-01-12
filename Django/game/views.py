@@ -1,14 +1,14 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 
 from django.contrib.auth import authenticate
 
 from .models import Card, UserProfile, UserCard
-from game.serializers import CardSerializer, UserProfileSerializer
+from game.serializers import CardSerializer, UserProfileSerializer, UserDeckSerializer
 from django.contrib.auth.models import User
-from game.models import UserProfile
+from game.models import UserProfile, UserDeck, DeckCard
 
 from random import sample
 import random
@@ -212,3 +212,53 @@ class UserCardsView(APIView):
             
         return Response(cards, status=status.HTTP_200_OK)
     
+class UserDecksListAndCreateView(APIView):
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        user_decks = UserDeck.objects.filter(user_profile=request.user.userprofile)
+        serializer = UserDeckSerializer(user_decks, many=True)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = UserDeckSerializer(data = request.data, context={'request':request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+    
+class UserDeckDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self, pk, user_profile):
+        try:
+            return UserDeck.objects.get(pk=pk, user_profile=user_profile)
+        except UserDeck.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        deck = self.get_object(pk, request.user.userprofile)
+        if not deck:
+            return Response({"error": "Deck not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UserDeckSerializer(deck)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        deck = self.get_object(pk, request.user.userprofile)
+        if not deck:
+            return Response({"error": "Deck not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserDeckSerializer(deck, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()  # The `update` method in the serializer handles the logic
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        deck = self.get_object(pk, request.user.userprofile)
+        if not deck:
+            return Response({"error": "Deck not found"}, status=status.HTTP_404_NOT_FOUND)
+        deck.delete()
+        return Response({"message": "Deck deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+

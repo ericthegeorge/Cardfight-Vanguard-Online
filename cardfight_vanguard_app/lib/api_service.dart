@@ -32,13 +32,33 @@ class ApiService {
     return response;
   }
 
-  Future<List<dynamic>> user_cards(String username) async {
+  Future<List<dynamic>> userCards(String username) async {
     final url = Uri.parse('$baseUrl/user/$username/user-cards');
     final response = await http.get(url);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
       throw Exception("Failed to load pack");
+    }
+  }
+
+  Future<List<dynamic>> fetchUserDecks(String username) async {
+    final url = Uri.parse('$baseUrl/user/$username/decks');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("Failed to load decks");
+    }
+  }
+
+  Future<List<dynamic>> deleteUserDeck(String username, int deckID) async {
+    final url = Uri.parse('$baseUrl/user/$username/decks');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("Failed to load decks");
     }
   }
 }
