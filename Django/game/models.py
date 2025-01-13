@@ -168,7 +168,7 @@ class UserCard(models.Model):
 class UserDeck(models.Model):
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="decks")
     name = models.CharField(max_length=100)
-    
+    highlight_card_image = models.CharField(max_length=255, null=True, default = "https://i.imgur.com/vJmy5qL.png")  # URL for the highlight card image
     def __str__(self):
         return f"{self.name} from user {self.user_profile.user.username}"
     

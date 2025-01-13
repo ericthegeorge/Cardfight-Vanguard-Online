@@ -477,16 +477,17 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Create Deck',
-            onPressed:
-                null, // TODO navigateToCreateDeck, // Navigate to CreateDeckPage
+            onPressed: () {
+              // Navigate to Create Deck Screen
+            },
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
           setState(() {
-            decks = _apiService
-                .fetchUserDecks(username); // Reload decks on pull-to-refresh
+            decks =
+                _apiService.fetchUserDecks(username); // Reload decks on refresh
           });
         },
         child: FutureBuilder<List<dynamic>>(
@@ -500,30 +501,69 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
               return const Center(child: Text('No decks found. Create one!'));
             } else {
               final decks = snapshot.data!;
-              return ListView.builder(
+              return GridView.builder(
+                padding: const EdgeInsets.all(4.0),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount:
+                        3, // Adjust the number of columns to fit decks
+                    mainAxisSpacing: 8.0,
+                    crossAxisSpacing: 8.0,
+                    childAspectRatio: 432 / 664 // Aspect ratio for deck cards
+                    ),
                 itemCount: decks.length,
                 itemBuilder: (context, index) {
                   final deck = decks[index];
                   return Card(
                     margin: const EdgeInsets.all(8.0),
                     elevation: 4.0,
+                    color: Color.fromRGBO(30, 30, 30, 70),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: ListTile(
-                      title: Text(deck['name']), // Deck name from API
-                      subtitle: Text('${deck['cards']} cards'),
-                      trailing: const Icon(Icons.arrow_forward),
-                      onTap: () {
-                        // Navigate to deck details screen or similar
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) =>
-                        //         DeckDetailPage(username: widget.username, deckId: deck['id']),
-                        //   ),
-                        // );
-                      },
+                    child: Column(
+                      children: [
+                        // Deck Image (takes up natural height)
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(8.0),
+                          ),
+                          child: Image.network(
+                            deck['highlight_card_image'], // Deck image URL
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image_not_supported,
+                                    size: 50),
+                              );
+                            },
+                          ),
+                        ),
+                        // Deck Name Box (below the image, outside the image)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: const BoxDecoration(
+                            color: Colors
+                                .black, // Background color for the text box
+                            borderRadius: BorderRadius.vertical(
+                              bottom: Radius.circular(8.0),
+                            ),
+                          ),
+                          child: Text(
+                            deck['name'], // Display the deck name
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.normal,
+                              fontFamily: 'Verdana',
+                              fontStyle: FontStyle.italic,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },

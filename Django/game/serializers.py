@@ -26,7 +26,7 @@ class UserDeckSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserDeck
-        fields = ['id', 'name', 'user_profile', 'cards']  # Replaced 'user' with 'user_profile'
+        fields = ['id', 'name', 'highlight_card_image', 'user_profile', 'cards']  # Replaced 'user' with 'user_profile'
 
     def validate_deck_cards(self, value):
         request = self.context.get('request')
