@@ -307,7 +307,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
   late Future<List<UserCard>> cards;
   late String username;
   final ValueNotifier<String> selectedSortOption =
-      ValueNotifier<String>('Name');
+      ValueNotifier<String>('Name \u2193');
   final ValueNotifier<List<UserCard>> sortedCardsNotifier = ValueNotifier([]);
   // List<UserCard> sorted_cards = [];
 
@@ -343,8 +343,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
             valueListenable: selectedSortOption,
             builder: (context, value, child) {
               return DropdownButton<String>(
+                padding: const EdgeInsets.all(4.0),
                 value: value,
-                items: <String>['Name', 'Rarity', 'Booster Pack']
+                items: <String>[
+                  'Name \u2193',
+                  'Name \u2191',
+                  'Rarity \u2193',
+                  'Rarity \u2191',
+                  'Booster Pack \u2193',
+                  'Booster Pack \u2191'
+                ]
                     .map((String value) => DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
@@ -469,10 +477,18 @@ class _CollectionScreenState extends State<CollectionScreen> {
   void sortUserCards(String criterion) {
     final currentList = List<UserCard>.from(sortedCardsNotifier.value);
     currentList.sort((a, b) {
-      if (criterion == 'Name') {
+      if (criterion == 'Name \u2193') {
         return a.name.compareTo(b.name);
-      } else if (criterion == 'Rarity') {
+      } else if (criterion == 'Rarity \u2193') {
         return a.rarity.compareTo(b.rarity);
+      } else if (criterion == 'Name \u2191') {
+        return b.name.compareTo(a.name);
+      } else if (criterion == 'Rarity \u2191') {
+        return b.rarity.compareTo(a.rarity);
+      } else if (criterion == 'Booster Pack \u2193') {
+        return a.number.compareTo(b.number);
+      } else if (criterion == 'Booster Pack \u2191') {
+        return b.number.compareTo(a.number);
       } else {
         return 0; // No sort for unknown criteria
       }
@@ -493,11 +509,13 @@ class UserCard {
   final String image;
   final String rarity;
   final int count;
+  final String number;
 
   UserCard(
       {required this.name,
       required this.image,
       required this.rarity,
+      required this.number,
       required this.count});
 
   factory UserCard.fromJson(Map<String, dynamic> json) {
@@ -505,6 +523,7 @@ class UserCard {
       name: json['card_name'],
       image: json['image'],
       rarity: json['rarity'],
+      number: json['number'],
       count: json['count'],
     );
   }
@@ -615,8 +634,8 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
                                   // 200.0, // Fixed height for the plus icon
                                   height: 580,
                                   width: double.infinity,
-                                  color:
-                                      Colors.grey[300], // Light gray background
+                                  // color:
+                                  //     Colors.grey[300], // Light gray background
                                   child: Icon(
                                     Icons.add,
                                     size: 50,
@@ -676,7 +695,7 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
-                                  color: Colors.grey[300],
+                                  color: Colors.transparent,
                                   child: const Icon(Icons.image_not_supported,
                                       size: 50),
                                 );
