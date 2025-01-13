@@ -276,6 +276,14 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: const Text('Collection'),
             ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                //   Navigator.pushNamed(context, '/user-cards',
+                //       arguments: username);
+              }, //TODO Battle
+              child: const Text('Battle'),
+            ),
           ],
         ),
       ),
@@ -504,68 +512,138 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
               return GridView.builder(
                 padding: const EdgeInsets.all(4.0),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount:
-                        3, // Adjust the number of columns to fit decks
-                    mainAxisSpacing: 8.0,
-                    crossAxisSpacing: 8.0,
-                    childAspectRatio: 432 / 664 // Aspect ratio for deck cards
-                    ),
-                itemCount: decks.length,
+                  crossAxisCount:
+                      3, // Adjust the number of columns to fit decks
+                  mainAxisSpacing: 8.0,
+                  crossAxisSpacing: 8.0,
+                  childAspectRatio: 432 / 664, // Aspect ratio for deck cards
+                ),
+                itemCount: decks.length + 1, // +1 for the blank deck
                 itemBuilder: (context, index) {
-                  final deck = decks[index];
-                  return Card(
-                    margin: const EdgeInsets.all(8.0),
-                    elevation: 4.0,
-                    color: Color.fromRGBO(30, 30, 30, 70),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      children: [
-                        // Deck Image (takes up natural height)
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(8.0),
+                  if (index == 0) {
+                    // Blank deck with the plus icon
+                    return MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigate to the Create Deck Screen
+                          Navigator.pushNamed(context, '/home',
+                              arguments: username);
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.all(8.0),
+                          // elevation: 4.0,
+                          // color: Color.fromRGBO(30, 30, 30, 70),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Image.network(
-                            deck['highlight_card_image'], // Deck image URL
+                          child: Column(
+                            children: [
+                              // Blank deck with a plus icon
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(8.0),
+                                ),
+                                child: Container(
+                                  // height: double.infinity,
+                                  // 200.0, // Fixed height for the plus icon
+                                  height: 580,
+                                  width: double.infinity,
+                                  color:
+                                      Colors.grey[300], // Light gray background
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 50,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              // "Create New Deck" Text
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(11.0),
+                                decoration: const BoxDecoration(
+                                  color: Color.fromRGBO(186, 213, 222,
+                                      122), // Background color for the text box
+                                  borderRadius: BorderRadius.vertical(
+                                    bottom: Radius.circular(8.0),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Create New Deck', // Text indicating it's a blank deck
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.normal,
+                                    fontFamily: 'Verdana',
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  } else {
+                    // Actual deck card
+                    final deck =
+                        decks[index - 1]; // Offset by 1 since index starts at 1
+                    return Card(
+                      margin: const EdgeInsets.all(8.0),
+                      // elevation: 4.0,
+                      // color: Color.fromRGBO(30, 30, 30, 70),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          // Deck Image (takes up natural height)
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(8.0),
+                            ),
+                            child: Image.network(
+                              deck['highlight_card_image'], // Deck image URL
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.image_not_supported,
+                                      size: 50),
+                                );
+                              },
+                            ),
+                          ),
+                          // Deck Name Box (below the image, outside the image)
+                          Container(
                             width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.image_not_supported,
-                                    size: 50),
-                              );
-                            },
-                          ),
-                        ),
-                        // Deck Name Box (below the image, outside the image)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: const BoxDecoration(
-                            color: Colors
-                                .black, // Background color for the text box
-                            borderRadius: BorderRadius.vertical(
-                              bottom: Radius.circular(8.0),
+                            padding: const EdgeInsets.all(11),
+                            decoration: const BoxDecoration(
+                              color: Color.fromRGBO(186, 213, 222,
+                                  122), // Background color for the text box
+                              borderRadius: BorderRadius.vertical(
+                                bottom: Radius.circular(8.0),
+                              ),
+                            ),
+                            child: Text(
+                              deck['name'], // Display the deck name
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.normal,
+                                fontFamily: 'Verdana',
+                                fontStyle: FontStyle.italic,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
-                          child: Text(
-                            deck['name'], // Display the deck name
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.normal,
-                              fontFamily: 'Verdana',
-                              fontStyle: FontStyle.italic,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+                        ],
+                      ),
+                    );
+                  }
                 },
               );
             }
