@@ -8,7 +8,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -46,6 +46,8 @@ class MyApp extends StatelessWidget {
 }
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -53,7 +55,7 @@ class LoginScreen extends StatefulWidget {
 class PasswordField extends StatefulWidget {
   final TextEditingController controller;
 
-  PasswordField({required this.controller});
+  const PasswordField({super.key, required this.controller});
 
   @override
   _PasswordFieldState createState() => _PasswordFieldState();
@@ -233,6 +235,8 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -276,6 +280,14 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: const Text('Collection'),
             ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                //   Navigator.pushNamed(context, '/user-cards',
+                //       arguments: username);
+              }, //TODO Battle
+              child: const Text('Battle'),
+            ),
           ],
         ),
       ),
@@ -284,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class CollectionScreen extends StatefulWidget {
-  const CollectionScreen({Key? key}) : super(key: key);
+  const CollectionScreen({super.key});
 
   @override
   _CollectionScreenState createState() => _CollectionScreenState();
@@ -294,6 +306,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
   final ApiService _apiService = ApiService();
   late Future<List<UserCard>> cards;
   late String username;
+  final ValueNotifier<String> selectedSortOption =
+      ValueNotifier<String>('Name \u2193');
+  final ValueNotifier<List<UserCard>> sortedCardsNotifier = ValueNotifier([]);
+  // List<UserCard> sorted_cards = [];
 
   @override
   void didChangeDependencies() {
@@ -320,20 +336,59 @@ class _CollectionScreenState extends State<CollectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Collection of $username'), actions: [
-        IconButton(
-          icon: Icon(Icons.style),
-          tooltip: 'Decks',
-          onPressed: () {
-            Navigator.pushNamed(context, '/decks', arguments: username);
-          },
-        )
-      ]),
+      appBar: AppBar(
+        title: Text('Collection of $username'),
+        actions: [
+          ValueListenableBuilder<String>(
+            valueListenable: selectedSortOption,
+            builder: (context, value, child) {
+              return DropdownButton<String>(
+                padding: const EdgeInsets.all(4.0),
+                value: value,
+                items: <String>[
+                  'Name \u2193',
+                  'Name \u2191',
+                  'Rarity \u2193',
+                  'Rarity \u2191',
+                  'Booster Pack \u2193',
+                  'Booster Pack \u2191'
+                ]
+                    .map((String value) => DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        ))
+                    .toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    // Update the selected sort option, but avoid rebuilding the entire screen
+                    selectedSortOption.value = newValue;
+                    sortUserCards(
+                        newValue); // Sort the cards without triggering a full rebuild
+                  }
+                },
+                underline: Container(), // Removes default underline
+                icon: Icon(Icons.sort, color: Colors.white), // Sort icon
+                dropdownColor: Colors.white, // Background color for dropdown
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.style),
+            tooltip: 'Decks',
+            onPressed: () {
+              Navigator.pushNamed(context, '/decks', arguments: username);
+            },
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
-          setState(() {
-            cards = fetchUserCards();
-          });
+          // Refresh the cards, but don't reset the sort option
+          final newCards = await fetchUserCards();
+          sortedCardsNotifier.value =
+              List.from(newCards); // Set the fetched data
+          sortUserCards(
+              selectedSortOption.value); // Reapply the sort after refresh
         },
         child: FutureBuilder<List<UserCard>>(
           future: cards,
@@ -346,63 +401,69 @@ class _CollectionScreenState extends State<CollectionScreen> {
               return const Center(
                   child: Text('No cards found in your collection.'));
             } else {
-              final cards = snapshot.data!;
-              return GridView.builder(
-                padding: const EdgeInsets.all(4.0),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 8.0,
-                  crossAxisSpacing: 8.0,
-                  childAspectRatio: 2 / 3, // Aspect ratio for card size
-                ),
-                itemCount: cards.length,
-                itemBuilder: (context, index) {
-                  final card = cards[index];
-                  return Card(
-                    margin: const EdgeInsets.all(8.0),
-                    elevation: 4.0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              // Initialize sortedCardsNotifier only if it's empty
+              if (sortedCardsNotifier.value.isEmpty) {
+                sortedCardsNotifier.value = List.from(snapshot.data!);
+                sortUserCards(selectedSortOption.value); // Apply default sort
+              }
+              return ValueListenableBuilder<List<UserCard>>(
+                valueListenable: sortedCardsNotifier,
+                builder: (context, sorted_cards, child) {
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(4.0),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      mainAxisSpacing: 8.0,
+                      crossAxisSpacing: 8.0,
+                      childAspectRatio: 2 / 3,
                     ),
-                    child: Stack(
-                      // alignment: Alignment
-                      //     .bottomCenter, // Aligns content to the bottom
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: Image.network(
-                            card.image,
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
+                    itemCount: sorted_cards.length,
+                    itemBuilder: (context, index) {
+                      final card = sorted_cards[index];
+                      return Card(
+                        margin: const EdgeInsets.all(8.0),
+                        elevation: 4.0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        // Superimposed text at the bottom
-                        Positioned(
-                          bottom:
-                              0.0, // Adjust the distance from the bottom edge
-                          left: 0.0, // Optional: adjust horizontal positioning
-                          right: 0.0, // Optional: adjust horizontal positioning
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Container(
-                              padding: EdgeInsets.all(0.0),
-                              color: Colors.black.withAlpha(0),
-                              child: Text(
-                                'x${card.count}', // Display the count
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.normal,
-                                  fontFamily: 'Verdana',
-                                  fontStyle: FontStyle.italic,
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: Image.network(
+                                card.image,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0.0,
+                              left: 0.0,
+                              right: 0.0,
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Container(
+                                  padding: EdgeInsets.all(4.0),
+                                  color: Colors.black54,
+                                  child: Text(
+                                    'x${card.count}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Verdana',
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
               );
@@ -412,6 +473,35 @@ class _CollectionScreenState extends State<CollectionScreen> {
       ),
     );
   }
+
+  void sortUserCards(String criterion) {
+    final currentList = List<UserCard>.from(sortedCardsNotifier.value);
+    currentList.sort((a, b) {
+      if (criterion == 'Name \u2193') {
+        return a.name.compareTo(b.name);
+      } else if (criterion == 'Rarity \u2193') {
+        return a.rarity.compareTo(b.rarity);
+      } else if (criterion == 'Name \u2191') {
+        return b.name.compareTo(a.name);
+      } else if (criterion == 'Rarity \u2191') {
+        return b.rarity.compareTo(a.rarity);
+      } else if (criterion == 'Booster Pack \u2193') {
+        return a.number.compareTo(b.number);
+      } else if (criterion == 'Booster Pack \u2191') {
+        return b.number.compareTo(a.number);
+      } else {
+        return 0; // No sort for unknown criteria
+      }
+    });
+    sortedCardsNotifier.value = currentList; // Update sorted list
+  }
+
+  @override
+  void dispose() {
+    sortedCardsNotifier.dispose();
+    super.dispose();
+  }
+// Sorting function
 }
 
 class UserCard {
@@ -419,11 +509,13 @@ class UserCard {
   final String image;
   final String rarity;
   final int count;
+  final String number;
 
   UserCard(
       {required this.name,
       required this.image,
       required this.rarity,
+      required this.number,
       required this.count});
 
   factory UserCard.fromJson(Map<String, dynamic> json) {
@@ -431,6 +523,7 @@ class UserCard {
       name: json['card_name'],
       image: json['image'],
       rarity: json['rarity'],
+      number: json['number'],
       count: json['count'],
     );
   }
@@ -442,7 +535,7 @@ class UserCard {
 // }
 
 class DeckListCreateScreen extends StatefulWidget {
-  const DeckListCreateScreen({Key? key}) : super(key: key);
+  const DeckListCreateScreen({super.key});
 
   @override
   _DeckListCreateScreenState createState() => _DeckListCreateScreenState();
@@ -477,16 +570,17 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Create Deck',
-            onPressed:
-                null, // TODO navigateToCreateDeck, // Navigate to CreateDeckPage
+            onPressed: () {
+              // Navigate to Create Deck Screen
+            },
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
           setState(() {
-            decks = _apiService
-                .fetchUserDecks(username); // Reload decks on pull-to-refresh
+            decks =
+                _apiService.fetchUserDecks(username); // Reload decks on refresh
           });
         },
         child: FutureBuilder<List<dynamic>>(
@@ -500,32 +594,141 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
               return const Center(child: Text('No decks found. Create one!'));
             } else {
               final decks = snapshot.data!;
-              return ListView.builder(
-                itemCount: decks.length,
+              return GridView.builder(
+                padding: const EdgeInsets.all(4.0),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount:
+                      3, // Adjust the number of columns to fit decks
+                  mainAxisSpacing: 8.0,
+                  crossAxisSpacing: 8.0,
+                  childAspectRatio: 432 / 664, // Aspect ratio for deck cards
+                ),
+                itemCount: decks.length + 1, // +1 for the blank deck
                 itemBuilder: (context, index) {
-                  final deck = decks[index];
-                  return Card(
-                    margin: const EdgeInsets.all(8.0),
-                    elevation: 4.0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListTile(
-                      title: Text(deck['name']), // Deck name from API
-                      subtitle: Text('${deck['cards']} cards'),
-                      trailing: const Icon(Icons.arrow_forward),
-                      onTap: () {
-                        // Navigate to deck details screen or similar
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) =>
-                        //         DeckDetailPage(username: widget.username, deckId: deck['id']),
-                        //   ),
-                        // );
-                      },
-                    ),
-                  );
+                  if (index == 0) {
+                    // Blank deck with the plus icon
+                    return MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigate to the Create Deck Screen
+                          Navigator.pushNamed(context, '/home',
+                              arguments: username);
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.all(8.0),
+                          // elevation: 4.0,
+                          // color: Color.fromRGBO(30, 30, 30, 70),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: [
+                              // Blank deck with a plus icon
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(8.0),
+                                ),
+                                child: Container(
+                                  // height: double.infinity,
+                                  // 200.0, // Fixed height for the plus icon
+                                  height: 580,
+                                  width: double.infinity,
+                                  // color:
+                                  //     Colors.grey[300], // Light gray background
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 50,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              // "Create New Deck" Text
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(11.0),
+                                decoration: const BoxDecoration(
+                                  color: Color.fromRGBO(186, 213, 222,
+                                      122), // Background color for the text box
+                                  borderRadius: BorderRadius.vertical(
+                                    bottom: Radius.circular(8.0),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Create New Deck', // Text indicating it's a blank deck
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.normal,
+                                    fontFamily: 'Verdana',
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  } else {
+                    // Actual deck card
+                    final deck =
+                        decks[index - 1]; // Offset by 1 since index starts at 1
+                    return Card(
+                      margin: const EdgeInsets.all(8.0),
+                      // elevation: 4.0,
+                      // color: Color.fromRGBO(30, 30, 30, 70),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          // Deck Image (takes up natural height)
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(8.0),
+                            ),
+                            child: Image.network(
+                              deck['highlight_card_image'], // Deck image URL
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.transparent,
+                                  child: const Icon(Icons.image_not_supported,
+                                      size: 50),
+                                );
+                              },
+                            ),
+                          ),
+                          // Deck Name Box (below the image, outside the image)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(11),
+                            decoration: const BoxDecoration(
+                              color: Color.fromRGBO(186, 213, 222,
+                                  122), // Background color for the text box
+                              borderRadius: BorderRadius.vertical(
+                                bottom: Radius.circular(8.0),
+                              ),
+                            ),
+                            child: Text(
+                              deck['name'], // Display the deck name
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.normal,
+                                fontFamily: 'Verdana',
+                                fontStyle: FontStyle.italic,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
                 },
               );
             }
@@ -537,7 +740,7 @@ class _DeckListCreateScreenState extends State<DeckListCreateScreen> {
 }
 
 class PackOpenerScreen extends StatefulWidget {
-  const PackOpenerScreen({Key? key}) : super(key: key);
+  const PackOpenerScreen({super.key});
 
   @override
   _PackOpenerScreenState createState() => _PackOpenerScreenState();

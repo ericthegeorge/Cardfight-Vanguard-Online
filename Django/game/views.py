@@ -207,6 +207,7 @@ class UserCardsView(APIView):
                 "card_name":user_card.card.name,
                 "image": user_card.card.image,
                 "rarity": user_card.card.rarity,
+                "number": user_card.card.number,
                 "count": user_card.count,
             })
             
